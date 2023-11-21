@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# Gebruik in console: internetradio "voorkeuzezender (uit 0 t/m 9 en a t/m e)"
+# Standaardwaarde is 3 (3 FM)
+# Datastromen gevonden in  https://www.webradiostreams.nl/
+# en https://www.mp3streams.nl
+# De lijst en standaardwaarde kunnen gemakkelijk in de code worden aangepast
+
+# Nummer, naam van zender en datastroom
+function zenders () {
+echo 0 Joy Radio       https://stream.joyradio.nl/joyradio
+
+echo 1 NPO Radio 1     https://icecast.omroep.nl/radio1-bb-mp3
+echo 2 NPO Radio 2     https://icecast.omroep.nl/radio2-bb-mp3
+echo 3 NPO 3FM         https://icecast.omroep.nl/3fm-bb-mp3
+echo 4 NPO Radio 4     https://icecast.omroep.nl/radio4-bb-mp3
+echo 5 NPO Radio 5     https://icecast.omroep.nl/radio5-bb-mp3
+echo 6 NPO Radio 6     https://icecast.omroep.nl/radio6-bb-mp3
+echo 7 NPO FunX NL     https://icecast.omroep.nl/funx-bb-mp3
+echo 8 NH Radio        https://www.mp3streams.nl/zender/nhradio/stream/27-mp3-160
+echo 9 538             https://21253.live.streamtheworld.com/RADIO538.mp3
+echo a Radio Veronica  https://20873.live.streamtheworld.com/VERONICA.mp3
+echo b Sky Radio       https://19993.live.streamtheworld.com/SKYRADIO.mp3
+echo c Qmusic Non-Stop https://icecast-qmusicnl-cdp.triple-it.nl/Qmusic_nl_nonstop_96.mp3       
+echo d 100%NL          https://stream.100p.nl/100pctnl.mp3      
+echo e NL Nederpop     https://stream.100p.nl/web04_mp3         
+echo f geen       	geen
+}
+
+if [[ $1 == "-h" ]]
+then
+	echo Gebruik: internet_radio \"voorkeuzezender \(uit 0 t/m 9 en a t/m e\)\"
+	echo -h \"help\"
+	echo
+	zenders | awk '{$NF="";print "\""$1"\"", "\""$2,$3,$4"\"","\\" }'
+	exit
+fi
+
+DIALOG=${DIALOG=dialog}
+tempfile=`tempfile 2>/dev/null` || tempfile=/tmp/test$$
+trap "rm -f $tempfile" 0 1 2 5 15
+
+if [[ $1 == "" ]]
+then 
+	zender_nummer=3
+else
+	zender_nummer=$1
+fi
+
+# lijst voor in Dialog menu kan uit help functie worden gehaald
+
+stoppen=false
+
+while [ $stoppen = "false" ]; do
+$DIALOG --clear --title "Internet radio zenderlijst" \
+	--default-item $zender_nummer \
+        --menu "Kies een zender:" 21 51 15 \
+"0" "Joy Radio" \
+"1" "NPO Radio 1" \
+"2" "NPO Radio 2" \
+"3" "NPO 3FM" \
+"4" "NPO Radio 4" \
+"5" "NPO Radio 5" \
+"6" "NPO Radio 6" \
+"7" "NPO FunX NL" \
+"8" "NH" \
+"9" "538" \
+"a" "Radio Veronica" \
+"b" "Sky Radio" \
+"c" "Qmusic Non-Stop" \
+"d" "100%NL" \
+"e" "NL Nederpop" \
+"f" "geen" \
+ 2> $tempfile
+
+retval=$?
+
+zender_nummer=`cat $tempfile`
+
+case $retval in
+  0)
+    url=$(zenders | awk -v zender_v=$zender_nummer '$1 == zender_v {print $NF}')
+    # Bij wisseling van zender of stoppen moet mplayer worden afgebroken
+    if [[ ! -z $(pidof mplayer) ]]; then
+      killall mplayer
+    fi
+    if [[ $zender_nummer!=f ]]; then
+    mplayer -really-quiet $url &
+    sleep 1
+    fi
+    ;;
+  1)
+    stoppen=true ;;
+  255)
+    stoppen=true ;;
+esac
+ setterm --clear all
+done
