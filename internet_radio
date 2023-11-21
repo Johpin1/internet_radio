@@ -36,16 +36,17 @@ then
 	exit
 fi
 
-DIALOG=${DIALOG=dialog}
-tempfile=`tempfile 2>/dev/null` || tempfile=/tmp/test$$
-trap "rm -f $tempfile" 0 1 2 5 15
-
+# Definieer standaard zender of bepaal het argument
 if [[ $1 == "" ]]
 then 
 	zender_nummer=3
 else
 	zender_nummer=$1
 fi
+
+DIALOG=${DIALOG=dialog}
+tempfile=`tempfile 2>/dev/null` || tempfile=/tmp/test$$
+trap "rm -f $tempfile" 0 1 2 5 15
 
 # lijst voor in Dialog menu kan uit help functie worden gehaald
 
