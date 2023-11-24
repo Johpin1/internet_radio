@@ -1,18 +1,26 @@
 #!/bin/bash
 
-# Gebruik in console: internetradio "voorkeuzestation (uit 0 t/m 9 en a t/m e)"
-# Standaardwaarde is 3 (dus in dit geval radiostation 3FM)
-# Datastromen gevonden in  https://www.webradiostreams.nl/
+# Gebruik in console: internetradio "voorkeuzestation (uit 0 t/m 9, a t/m e of leeg)"
+# Standaardwaarde is 3 (dus in dit geval radiostation 3FM) en kan gemakkelijk in de
+# code worden aangepast.
+# Datastromen zijn gevonden in  https://www.webradiostreams.nl/
 # en https://www.mp3streams.nl
 # De lijst kan gemakkelijk worden uitgebreid tot 35 stations (0 t/m 9 en
-# a t/m z) en de standaardwaarde kunnen gemakkelijk in de code worden aangepast.
+# a t/m z) en de standaardwaarde kan gemakkelijk in de code worden aangepast.
 
 # Definieer standaard station of bepaal het meegegeven argument
 if [[ $1 == "" ]]
 then 
-	station_nummer=3
+    station_nummer=3
 else
-	station_nummer=$1
+    station_nummer=$1
+fi
+
+# Definieer versie
+if [[ $1 == "-v" ]]
+then 
+    echo Versienummer is 0.9
+    exit
 fi
 
 # Nummer, naam van radiostation (maximaal drie woorden) en datastroom.
@@ -36,14 +44,16 @@ echo e NL Nederpop     https://stream.100p.nl/web04_mp3
 echo f geen            geen
 }
 
+# Help funtie
 if [[ $1 == "-h" ]]
 then
-	echo Gebruik: internet_radio \"voorkeuzestation \(uit 0 t/m 9 en a t/m e\)\"
-	echo -h \"help\"
-	echo
-	# Genereer lijst voor in Dialog keuzemenu te plaatsen
-	stations | awk '{$NF="";print "\""$1"\"", "\""$2,$3,$4"\"","\\" }'
-	exit
+    echo Gebruik: internet_radio \"voorkeuzestation \(uit 0 t/m 9, a t/m e of leeg\)\"
+    echo -h \"help\"
+    echo -v \"versie\" 
+    echo
+    # Genereer lijst voor het plaatsen in Dialog keuzemenu
+    stations | awk '{$NF="";print "\""$1"\"", "\""$2,$3,$4"\"","\\" }'
+    exit
 fi
 
 DIALOG=${DIALOG=dialog}
@@ -55,11 +65,11 @@ trap "rm -f $tempfile" 0 1 2 5 15
 stoppen=false
 
 while [ $stoppen = "false" ]; do
-$DIALOG --clear --title "Lijst internet radiostations" \
-	--default-item $station_nummer \
-	--ok-label "Bevestig"\
-	--cancel-label "Annuleer"\
-        --menu "Kies een radiostation:" 21 51 15 \
+    $DIALOG --clear --title "Lijst internet radiostations" \
+            --default-item $station_nummer \
+            --ok-label "Bevestig"\
+            --cancel-label "Annuleer"\
+            --menu "Kies een radiostation:" 21 51 15 \
 "0" "Joy Radio " \
 "1" "NPO Radio 1" \
 "2" "NPO Radio 2" \
@@ -76,29 +86,29 @@ $DIALOG --clear --title "Lijst internet radiostations" \
 "d" "100%NL  " \
 "e" "NL Nederpop " \
 "f" "geen  " \
- 2> $tempfile
+    2> $tempfile
 
-retval=$?
+    retval=$?
 
-# Ken gekozen station toe
-station_nummer=`cat $tempfile`
+    # Ken gekozen station toe
+    station_nummer=`cat $tempfile`
 
-case $retval in
-  0)
-    url=$(stations | awk -v station_v=$station_nummer '$1 == station_v {print $NF}')
-    # Bij wisseling van station of stoppen moet MPlayer worden afgebroken
-    if [[ ! -z $(pidof mplayer) ]]; then
-      killall mplayer
-    fi
-    if [[ $station_nummer!=f ]]; then
-    mplayer -really-quiet $url &
-    sleep 1
-    fi
-    ;;
-  1)
-    stoppen=true ;;
-  255)
-    stoppen=true ;;
-esac
- setterm --clear all
+    case $retval in
+      0)
+      url=$(stations | awk -v station_v=$station_nummer '$1 == station_v {print $NF}')
+      # Bij wisseling van station of stoppen moet MPlayer worden afgebroken
+      if [[ ! -z $(pidof mplayer) ]]; then
+          killall mplayer
+      fi
+      if [[ $station_nummer!=f ]]; then
+          mplayer -really-quiet $url &
+          sleep 1
+      fi
+      ;;
+      1)
+      stoppen=true ;;
+      255)
+      stoppen=true ;;
+    esac
+    setterm --clear all
 done
