@@ -19,11 +19,12 @@ fi
 # Definieer versie
 if [[ $1 == "-v" ]]
 then 
-    echo Versienummer is 0.9
+    echo Versienummer is 1.2
     exit
 fi
 
 # Nummer, naam van radiostation (maximaal drie woorden) en datastroom.
+# In de laatste rij van de lijst mag geen radiostation zijn gedefinieerd.
 function stations () {
 echo 0 Joy Radio       https://stream.joyradio.nl/joyradio
 
@@ -43,6 +44,9 @@ echo d 100%NL          https://stream.100p.nl/100pctnl.mp3
 echo e NL Nederpop     https://stream.100p.nl/web04_mp3         
 echo f geen            geen
 }
+
+# Bepaal laatste nummer van de lijst
+laatste_nummer=$(stations | tail -n 1 | awk '{print $1 }')
 
 # Help funtie
 if [[ $1 == "-h" ]]
@@ -68,7 +72,7 @@ while [ $stoppen = "false" ]; do
     $DIALOG --clear --title "Lijst internet radiostations" \
             --default-item $station_nummer \
             --ok-label "Bevestig"\
-            --cancel-label "Annuleer"\
+            --cancel-label "Verlaat"\
             --menu "Kies een radiostation:" 21 51 15 \
 "0" "Joy Radio " \
 "1" "NPO Radio 1" \
@@ -100,7 +104,7 @@ while [ $stoppen = "false" ]; do
       if [[ ! -z $(pidof mplayer) ]]; then
           killall mplayer
       fi
-      if [[ $station_nummer!=f ]]; then
+      if [[ $station_nummer!=$laatste_nummer ]]; then
           mplayer -really-quiet $url &
           sleep 1
       fi
