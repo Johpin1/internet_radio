@@ -19,7 +19,7 @@ fi
 # Definieer versie
 if [[ $1 == "-v" ]]
 then 
-    echo Versienummer is 1.2
+    echo Versienummer is 1.0
     exit
 fi
 
